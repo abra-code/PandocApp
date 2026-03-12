@@ -1,5 +1,5 @@
 #!/bin/bash
-# lib.pandoc.sh - Shared functions and variables for Pandoc
+# lib.pandoc.sh - Shared functions and variables for DocToDoc
 
 # Control IDs
 TABLE_ID=10

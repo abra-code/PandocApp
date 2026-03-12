@@ -1,5 +1,5 @@
 #!/bin/bash
-# Pandoc.main.sh - Entry point for Pandoc applet
+# DocToDoc.main.sh - Entry point for DocToDoc applet
 
 echo "[$(/usr/bin/basename "$0")]"
 # env | sort

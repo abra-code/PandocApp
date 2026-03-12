@@ -1,6 +1,6 @@
-# Pandoc.app
+# DocToDoc.app
 
-![Pandoc Icon](Icon/Pandoc-Default-256x256@1x.png)
+![DocToDoc Icon](Icon/DocToDoc-Default-256x256@1x.png)
 
 A native macOS applet for batch conversion of documents using [pandoc](https://pandoc.org) — a universal document converter.  
 Bundles pandoc 3.9 binary so no separate installation is required.
@@ -30,7 +30,7 @@ md, markdown, rst, tex, latex, html, htm, docx, odt, epub, txt, org, adoc, ascii
 
 ## Usage
 
-1. Launch `Pandoc.app` (or drop files/folders onto it)
+1. Launch `DocToDoc.app` (or drop files/folders onto it)
 2. Add documents using the **+** button
 3. Select a document to see its info
 4. Choose the output format and optional flavor variant

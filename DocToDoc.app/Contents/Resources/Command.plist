@@ -6,7 +6,7 @@
 	<array>
 		<dict>
 			<key>NAME</key>
-			<string>Pandoc</string>
+			<string>DocToDoc</string>
 			<key>ACTIVATION_MODE</key>
 			<string>act_file_or_folder</string>
 			<key>EXECUTION_MODE</key>
@@ -14,7 +14,7 @@
 			<key>ACTIONUI_WINDOW</key>
 			<dict>
 				<key>JSON_NAME</key>
-				<string>Pandoc</string>
+				<string>DocToDoc</string>
 				<key>INIT_SUBCOMMAND_ID</key>
 				<string>pandoc.init</string>
 				<key>END_CANCEL_SUBCOMMAND_ID</key>
@@ -39,7 +39,7 @@
 
 		<dict>
 			<key>NAME</key>
-			<string>Pandoc</string>
+			<string>DocToDoc</string>
 			<key>COMMAND_ID</key>
 			<string>pandoc.init</string>
 			<key>EXECUTION_MODE</key>
@@ -48,7 +48,7 @@
 
 		<dict>
 			<key>NAME</key>
-			<string>Pandoc</string>
+			<string>DocToDoc</string>
 			<key>COMMAND_ID</key>
 			<string>pandoc.files.selection.changed</string>
 			<key>EXECUTION_MODE</key>
@@ -57,7 +57,7 @@
 
 		<dict>
 			<key>NAME</key>
-			<string>Pandoc</string>
+			<string>DocToDoc</string>
 			<key>COMMAND_ID</key>
 			<string>pandoc.add.files</string>
 			<key>EXECUTION_MODE</key>
@@ -80,7 +80,7 @@
 
 		<dict>
 			<key>NAME</key>
-			<string>Pandoc</string>
+			<string>DocToDoc</string>
 			<key>COMMAND_ID</key>
 			<string>pandoc.remove.selected</string>
 			<key>EXECUTION_MODE</key>
@@ -94,7 +94,7 @@
 
 		<dict>
 			<key>NAME</key>
-			<string>Pandoc</string>
+			<string>DocToDoc</string>
 			<key>COMMAND_ID</key>
 			<string>pandoc.clear.all</string>
 			<key>EXECUTION_MODE</key>
@@ -103,7 +103,7 @@
 
 		<dict>
 			<key>NAME</key>
-			<string>Pandoc</string>
+			<string>DocToDoc</string>
 			<key>COMMAND_ID</key>
 			<string>pandoc.start.batch</string>
 			<key>EXECUTION_MODE</key>
@@ -124,7 +124,7 @@
 
 		<dict>
 			<key>NAME</key>
-			<string>Pandoc</string>
+			<string>DocToDoc</string>
 			<key>COMMAND_ID</key>
 			<string>pandoc.cancel</string>
 			<key>EXECUTION_MODE</key>
@@ -133,7 +133,7 @@
 
 		<dict>
 			<key>NAME</key>
-			<string>Pandoc</string>
+			<string>DocToDoc</string>
 			<key>COMMAND_ID</key>
 			<string>pandoc.files.double.click</string>
 			<key>EXECUTION_MODE</key>
@@ -142,7 +142,7 @@
 
 		<dict>
 			<key>NAME</key>
-			<string>Pandoc</string>
+			<string>DocToDoc</string>
 			<key>COMMAND_ID</key>
 			<string>pandoc.format.changed</string>
 			<key>EXECUTION_MODE</key>
@@ -151,7 +151,7 @@
 
 		<dict>
 			<key>NAME</key>
-			<string>Pandoc</string>
+			<string>DocToDoc</string>
 			<key>COMMAND_ID</key>
 			<string>pandoc.toc.changed</string>
 			<key>EXECUTION_MODE</key>
@@ -160,7 +160,7 @@
 
 		<dict>
 			<key>NAME</key>
-			<string>Pandoc</string>
+			<string>DocToDoc</string>
 			<key>COMMAND_ID</key>
 			<string>pandoc.reveal.in.finder</string>
 			<key>EXECUTION_MODE</key>
@@ -169,7 +169,7 @@
 
 		<dict>
 			<key>NAME</key>
-			<string>Pandoc</string>
+			<string>DocToDoc</string>
 			<key>COMMAND_ID</key>
 			<string>pandoc.quicklook</string>
 			<key>EXECUTION_MODE</key>

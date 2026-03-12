@@ -22,7 +22,7 @@
 		</dict>
 	</array>
 	<key>CFBundleExecutable</key>
-	<string>Pandoc</string>
+	<string>DocToDoc</string>
 	<key>CFBundleIconFile</key>
 	<string>Pandoc</string>
 	<key>CFBundleIconName</key>
@@ -32,11 +32,11 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>Pandoc</string>
+	<string>DocToDoc</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleSignature</key>
-	<string>Pndc</string>
+	<string>DtoD</string>
 	<key>CFBundleSupportedPlatforms</key>
 	<array>
 		<string>MacOSX</string>
@@ -45,10 +45,10 @@
 	<array>
 		<dict>
 			<key>CFBundleURLName</key>
-			<string>Pandoc</string>
+			<string>DocToDoc</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>pandoc</string>
+				<string>doctodoc</string>
 			</array>
 		</dict>
 	</array>
@@ -73,7 +73,7 @@
 	<key>LSMinimumSystemVersion</key>
 	<string>14.6</string>
 	<key>NSAppleEventsUsageDescription</key>
-	<string>Pandoc sends AppleEvents to other apps to provide functionality unique to this applet.</string>
+	<string>DocToDoc sends AppleEvents to other apps to provide functionality unique to this applet.</string>
 	<key>NSMainNibFile</key>
 	<string>MainMenu</string>
 	<key>NSPrincipalClass</key>
