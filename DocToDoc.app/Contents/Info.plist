@@ -24,9 +24,9 @@
 	<key>CFBundleExecutable</key>
 	<string>DocToDoc</string>
 	<key>CFBundleIconFile</key>
-	<string>Pandoc</string>
+	<string>DocToDoc</string>
 	<key>CFBundleIconName</key>
-	<string>Pandoc</string>
+	<string>DocToDoc</string>
 	<key>CFBundleIdentifier</key>
 	<string>com.abracode.pandoc</string>
 	<key>CFBundleInfoDictionaryVersion</key>
