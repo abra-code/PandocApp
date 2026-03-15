@@ -508,5 +508,10 @@
                 <userDefinedRuntimeAttribute type="string" keyPath="commandFilePath" value="Command.plist"/>
             </userDefinedRuntimeAttributes>
         </customObject>
+        <customObject id="OQd-EJ-Dkj" customClass="OMCMainMenuController">
+            <userDefinedRuntimeAttributes>
+                <userDefinedRuntimeAttribute type="string" keyPath="commandFilePath" value="Command.plist"/>
+            </userDefinedRuntimeAttributes>
+        </customObject>
     </objects>
 </document>
