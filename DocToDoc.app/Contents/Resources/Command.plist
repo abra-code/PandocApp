@@ -82,6 +82,20 @@
 			<key>NAME</key>
 			<string>DocToDoc</string>
 			<key>COMMAND_ID</key>
+			<string>doctodoc.files.drop</string>
+			<key>EXECUTION_MODE</key>
+			<string>exe_script_file</string>
+			<key>ENVIRONMENT_VARIABLES</key>
+			<dict>
+				<key>OMC_ACTIONUI_TABLE_10_COLUMN_2_ALL_ROWS</key>
+				<string></string>
+			</dict>
+		</dict>
+
+		<dict>
+			<key>NAME</key>
+			<string>DocToDoc</string>
+			<key>COMMAND_ID</key>
 			<string>doctodoc.remove.selected</string>
 			<key>EXECUTION_MODE</key>
 			<string>exe_script_file</string>

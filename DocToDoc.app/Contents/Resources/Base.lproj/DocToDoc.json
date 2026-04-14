@@ -30,7 +30,9 @@
           "columns": ["Document"],
           "widths": [280],
           "actionID": "doctodoc.files.selection.changed",
-          "doubleClickActionID": "doctodoc.files.double.click"
+          "doubleClickActionID": "doctodoc.files.double.click",
+          "onDropTypes": ["public.file-url", "public.folder"],
+          "onDropActionID": "doctodoc.files.drop"
         }
       },
       {

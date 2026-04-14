@@ -16,6 +16,10 @@ FLAVOR_PICKER_ID=17
 dialog_tool="$OMC_OMC_SUPPORT_PATH/omc_dialog_control"
 window_uuid="$OMC_ACTIONUI_WINDOW_UUID"
 
+DEBUG=false
+
+_lib_log() { [ "$DEBUG" = "true" ] && printf '%s\n' "$*" >> /tmp/doctodoc_drop.log; }
+
 # Bundled pandoc binary
 pandoc_bin="${OMC_APP_BUNDLE_PATH}/Contents/Helpers/pandoc"
 
@@ -61,8 +65,8 @@ input_format_extensions() {
 
 # Build filter arguments for find command from pandoc --list-input-formats
 build_supported_input_extensions() {
-    local all_formats
-    all_formats=$("$pandoc_bin" --list-input-formats 2>/dev/null)
+    local tmp_formats="$(/usr/bin/mktemp "${TMPDIR:-/tmp}/doctodoc.XXXXXX")"
+    "$pandoc_bin" --list-input-formats > "$tmp_formats" 2>/dev/null
     local seen=""
     local result=""
     while IFS= read -r format; do
@@ -70,8 +74,7 @@ build_supported_input_extensions() {
         [ "$format" = "native" ] && continue
         [ "$format" = "pod" ] && continue
         [ "$format" = "jira" ] && continue
-        local exts
-        exts=$(input_format_extensions "$format")
+        local exts="$(input_format_extensions "$format")"
         [ -z "$exts" ] && continue
         for ext in $exts; do
             # Skip duplicates
@@ -85,20 +88,22 @@ build_supported_input_extensions() {
                 result="-iname *.$ext"
             fi
         done
-    done <<< "$all_formats"
+    done < "$tmp_formats"
+    /bin/rm -f "$tmp_formats"
     # Plain text (.txt) is not a pandoc input format but pandoc handles it as markdown
-    if ! echo " $seen " | /usr/bin/grep -q " txt "; then
-        result="$result -o -iname *.txt"
-    fi
-    echo "$result"
+    case " $seen " in
+        *" txt "*) ;;
+        *) result="$result -o -iname *.txt" ;;
+    esac
+    printf '%s\n' "$result"
 }
 
 # Lazy accessor - only calls build_supported_input_extensions on first use
 get_supported_input_extensions() {
     if [ -z "$_SUPPORTED_INPUT_EXTENSIONS_CACHED" ]; then
-        _SUPPORTED_INPUT_EXTENSIONS_CACHED=$(build_supported_input_extensions)
+        _SUPPORTED_INPUT_EXTENSIONS_CACHED="$(build_supported_input_extensions)"
     fi
-    echo "$_SUPPORTED_INPUT_EXTENSIONS_CACHED"
+    printf '%s\n' "$_SUPPORTED_INPUT_EXTENSIONS_CACHED"
 }
 
 # Formats to exclude from the output picker
@@ -279,55 +284,70 @@ output_format_to_extension() {
     esac
 }
 
-# Function to add files to the table
-# Arguments: newline-separated list of file/directory paths to add
+# Add files to the table.
+# Argument: newline-separated list of file or directory paths to add.
+# Directories are scanned recursively for pandoc-supported input formats.
 add_files_to_table() {
     local new_paths="$1"
     local buffer=""
+    local file_path="" filename="" found_file=""
 
-    # Get existing file paths from the table
+    _lib_log "--- add_files_to_table ---"
+    _lib_log "new_paths='${new_paths}'"
+
+    # Preserve existing table rows
     local existing_paths="$OMC_ACTIONUI_TABLE_10_COLUMN_2_ALL_ROWS"
-
-    # Add existing files first
     if [ -n "$existing_paths" ]; then
+        local tmp_existing="$(/usr/bin/mktemp "${TMPDIR:-/tmp}/doctodoc.XXXXXX")"
+        printf '%s\n' "$existing_paths" > "$tmp_existing"
         while IFS= read -r file_path; do
-            if [ -n "$file_path" ]; then
-                local filename="$("/usr/bin/basename" "$file_path")"
-                buffer="${buffer}${filename}	${file_path}
+            [ -z "$file_path" ] && continue
+            filename="$(/usr/bin/basename "$file_path")"
+            buffer="${buffer}${filename}	${file_path}
 "
-            fi
-        done <<< "$existing_paths"
+        done < "$tmp_existing"
+        /bin/rm -f "$tmp_existing"
     fi
 
-    # Add new files/directories
-    local supported_exts=$(get_supported_input_extensions)
+    # Process each new path
+    local supported_exts="$(get_supported_input_extensions)"
+    local tmp_new="$(/usr/bin/mktemp "${TMPDIR:-/tmp}/doctodoc.XXXXXX")"
+    printf '%s\n' "$new_paths" > "$tmp_new"
     while IFS= read -r file_path; do
-        if [ -d "$file_path" ]; then
-            # It's a directory - search recursively for supported files
-            local all_files="$(/usr/bin/find "$file_path" -type f \
-                \( $supported_exts \) \
-                ! -path "*/.*" 2>/dev/null)"
+        [ -z "$file_path" ] && continue
+        _lib_log "processing path='${file_path}'"
 
+        if [ -d "$file_path" ]; then
+            # Directory — scan recursively for pandoc-supported input formats
+            local tmp_files="$(/usr/bin/mktemp "${TMPDIR:-/tmp}/doctodoc.XXXXXX")"
+            /usr/bin/find "$file_path" -type f \
+                \( $supported_exts \) \
+                ! -path "*/.*" -print > "$tmp_files" 2>/dev/null
             while IFS= read -r found_file; do
-                if [ -n "$found_file" ]; then
-                    local filename="$("/usr/bin/basename" "$found_file")"
-                    buffer="${buffer}${filename}	${found_file}
+                [ -z "$found_file" ] && continue
+                _lib_log "  found: '${found_file}'"
+                filename="$(/usr/bin/basename "$found_file")"
+                buffer="${buffer}${filename}	${found_file}
 "
-                fi
-            done <<< "$all_files"
+            done < "$tmp_files"
+            /bin/rm -f "$tmp_files"
 
         elif [ -e "$file_path" ]; then
-            # It's a file - add it directly
-            local filename="$("/usr/bin/basename" "$file_path")"
+            _lib_log "  is file"
+            filename="$(/usr/bin/basename "$file_path")"
             buffer="${buffer}${filename}	${file_path}
 "
         fi
-    done <<< "$new_paths"
+    done < "$tmp_new"
+    /bin/rm -f "$tmp_new"
 
-    # Sort, remove duplicates, and set table rows
+    _lib_log "buffer='${buffer}'"
+
+    # Sort, deduplicate, and push to the table
     if [ -n "$buffer" ]; then
         printf "%s" "$buffer" | /usr/bin/sort -u | "$dialog_tool" "$window_uuid" ${TABLE_ID} omc_table_set_rows_from_stdin
     else
-        "$dialog_tool" "$window_uuid" ${TABLE_ID} omc_table_set_rows_from_stdin <<< ""
+        "$dialog_tool" "$window_uuid" ${TABLE_ID} omc_table_remove_all_rows
     fi
+    _lib_log "--- add_files_to_table done ---"
 }
