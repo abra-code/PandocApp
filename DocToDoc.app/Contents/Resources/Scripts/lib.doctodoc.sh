@@ -63,12 +63,16 @@ input_format_extensions() {
     esac
 }
 
-# Build filter arguments for find command from pandoc --list-input-formats
-build_supported_input_extensions() {
+# Build the plain, space-separated list of supported input extensions (lowercase)
+# from pandoc --list-input-formats. This is the single source of truth: both the
+# find filter (build_supported_input_extensions) and the single-file type check
+# (is_supported_input_file) derive from it, so they can never drift apart.
+build_supported_extension_list() {
     local tmp_formats="$(/usr/bin/mktemp "${TMPDIR:-/tmp}/doctodoc.XXXXXX")"
     "$pandoc_bin" --list-input-formats > "$tmp_formats" 2>/dev/null
     local seen=""
-    local result=""
+    local format
+    local ext
     while IFS= read -r format; do
         [ -z "$format" ] && continue
         [ "$format" = "native" ] && continue
@@ -82,19 +86,37 @@ build_supported_input_extensions() {
                 *" $ext "*) continue ;;
             esac
             seen="$seen $ext"
-            if [ -n "$result" ]; then
-                result="$result -o -iname *.$ext"
-            else
-                result="-iname *.$ext"
-            fi
         done
     done < "$tmp_formats"
     /bin/rm -f "$tmp_formats"
     # Plain text (.txt) is not a pandoc input format but pandoc handles it as markdown
     case " $seen " in
         *" txt "*) ;;
-        *) result="$result -o -iname *.txt" ;;
+        *) seen="$seen txt" ;;
     esac
+    # Strip the leading space
+    printf '%s\n' "${seen# }"
+}
+
+# Lazy accessor for the plain extension list
+get_supported_extension_list() {
+    if [ -z "$_SUPPORTED_EXTENSION_LIST_CACHED" ]; then
+        _SUPPORTED_EXTENSION_LIST_CACHED="$(build_supported_extension_list)"
+    fi
+    printf '%s\n' "$_SUPPORTED_EXTENSION_LIST_CACHED"
+}
+
+# Build filter arguments for the find command from the supported extension list.
+build_supported_input_extensions() {
+    local result=""
+    local ext
+    for ext in $(get_supported_extension_list); do
+        if [ -n "$result" ]; then
+            result="$result -o -iname *.$ext"
+        else
+            result="-iname *.$ext"
+        fi
+    done
     printf '%s\n' "$result"
 }
 
@@ -104,6 +126,53 @@ get_supported_input_extensions() {
         _SUPPORTED_INPUT_EXTENSIONS_CACHED="$(build_supported_input_extensions)"
     fi
     printf '%s\n' "$_SUPPORTED_INPUT_EXTENSIONS_CACHED"
+}
+
+# Return 0 if filename has a supported (case-insensitive) input extension, else 1.
+# Used to filter individually selected/dropped files; directory contents are
+# filtered by find -iname, which is already case-insensitive.
+is_supported_input_file() {
+    local filename="$1"
+    # A name with no dot has no extension -> unsupported
+    case "$filename" in
+        *.*) ;;
+        *) return 1 ;;
+    esac
+    local ext="$(printf '%s' "${filename##*.}" | /usr/bin/tr '[:upper:]' '[:lower:]')"
+    case " $(get_supported_extension_list) " in
+        *" $ext "*) return 0 ;;
+    esac
+    return 1
+}
+
+# Show a single consolidated alert for files skipped because their type is not
+# supported. Aggregates so a multi-file drop produces one dialog, not one per file.
+# Arguments: count, newline-separated list of file names
+notify_unsupported_files() {
+    local count="$1"
+    local names="$2"
+    local alert_tool="$OMC_OMC_SUPPORT_PATH/alert"
+
+    # Cap the listed names so a large drop does not produce a giant dialog
+    local max_list=10
+    local shown="$(printf '%s\n' "$names" | /usr/bin/head -n "$max_list")"
+    local extra=$(( count - max_list ))
+
+    local header
+    if [ "$count" -eq 1 ]; then
+        header="1 file was skipped because its type is not supported:"
+    else
+        header="$count files were skipped because their type is not supported:"
+    fi
+
+    local message="$header
+$shown"
+    if [ "$extra" -gt 0 ]; then
+        message="$message
+...and $extra more"
+    fi
+
+    "$alert_tool" --level caution --title "DocToDoc" "$message"
 }
 
 # Formats to exclude from the output picker
@@ -291,6 +360,10 @@ add_files_to_table() {
     local new_paths="$1"
     local buffer=""
     local file_path="" filename="" found_file=""
+    # Track individually added files skipped for unsupported type, so we can
+    # warn once at the end instead of one alert per file.
+    local unsupported_count=0
+    local unsupported_names=""
 
     _lib_log "--- add_files_to_table ---"
     _lib_log "new_paths='${new_paths}'"
@@ -335,8 +408,19 @@ add_files_to_table() {
         elif [ -e "$file_path" ]; then
             _lib_log "  is file"
             filename="$(/usr/bin/basename "$file_path")"
-            buffer="${buffer}${filename}	${file_path}
+            if is_supported_input_file "$filename"; then
+                buffer="${buffer}${filename}	${file_path}
 "
+            else
+                _lib_log "  unsupported type, skipping: $filename"
+                unsupported_count=$(( unsupported_count + 1 ))
+                if [ -z "$unsupported_names" ]; then
+                    unsupported_names="$filename"
+                else
+                    unsupported_names="$unsupported_names
+$filename"
+                fi
+            fi
         fi
     done < "$tmp_new"
     /bin/rm -f "$tmp_new"
@@ -349,5 +433,11 @@ add_files_to_table() {
     else
         "$dialog_tool" "$window_uuid" ${TABLE_ID} omc_table_remove_all_rows
     fi
+
+    # Warn once about any individually added files of unsupported type
+    if [ "$unsupported_count" -gt 0 ]; then
+        notify_unsupported_files "$unsupported_count" "$unsupported_names"
+    fi
+
     _lib_log "--- add_files_to_table done ---"
 }
