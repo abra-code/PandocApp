@@ -24,10 +24,19 @@ OPEN_PATHS_PB_KEY="DOCTODOC_OPEN_PATHS"
 
 DEBUG=false
 
-_lib_log() { [ "$DEBUG" = "true" ] && printf '%s\n' "$*" >> /tmp/doctodoc_drop.log; }
+# The trailing "return 0" is load-bearing. With logging off the && short-circuits
+# to false, and every caller that ends with a _lib_log call - doctodoc.files.drop
+# does - would hand that back as its own exit status. A logging helper must never
+# decide whether the handler succeeded.
+_lib_log() { [ "$DEBUG" = "true" ] && printf '%s\n' "$*" >> /tmp/doctodoc_drop.log; return 0; }
 
-# Bundled pandoc binary
-pandoc_bin="${OMC_APP_BUNDLE_PATH}/Contents/Helpers/pandoc"
+# Bundled pandoc binary.
+#
+# Overridable so a test can point it at a recorder and assert on the flags the
+# applet builds. Some of them cannot be seen any other way: pandoc omits an empty
+# contents list on its own, so whether the applet asked for --toc on a document
+# with no headings is invisible in the output and visible only in the argv.
+pandoc_bin="${DOCTODOC_PANDOC_BIN:-${OMC_APP_BUNDLE_PATH}/Contents/Helpers/pandoc}"
 
 # Map pandoc input format name to file extension(s), space-separated
 input_format_extensions() {
