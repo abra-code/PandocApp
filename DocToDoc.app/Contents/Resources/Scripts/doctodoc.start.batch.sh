@@ -37,7 +37,11 @@ output_ext="$(output_format_to_extension "$output_format")"
 # Get all file paths from the table (column 2)
 file_paths="$OMC_ACTIONUI_TABLE_10_COLUMN_2_ALL_ROWS"
 
+# The window opens with an empty list, so Convert is reachable with nothing to
+# convert. Say so instead of returning from the folder panel to a still screen.
 if [ -z "$file_paths" ]; then
+    "$dialog_tool" "$window_uuid" ${FILE_INFO_VIEW_ID} \
+        "Nothing to convert - drop documents into the list first."
     exit 0
 fi
 

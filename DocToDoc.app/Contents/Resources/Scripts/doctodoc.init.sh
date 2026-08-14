@@ -8,16 +8,14 @@ source "${OMC_APP_BUNDLE_PATH}/Contents/Resources/Scripts/lib.doctodoc.sh"
 "$dialog_tool" "$window_uuid" ${TABLE_ID} omc_table_set_columns "Documents"
 "$dialog_tool" "$window_uuid" ${TABLE_ID} omc_table_set_column_widths 270
 
-# Clear any existing rows
+# Start with an empty document list
 "$dialog_tool" "$window_uuid" ${TABLE_ID} omc_table_remove_all_rows
 
 # Hide TOC toggle - Plain Text does not support it
 "$dialog_tool" "$window_uuid" ${TOC_TOGGLE_ID} omc_set_property "hidden" "true"
 
-# If files were dropped on the app, add them
-if [ -n "$OMC_OBJ_PATH" ]; then
-    add_files_to_table "$OMC_OBJ_PATH"
-fi
+"$dialog_tool" "$window_uuid" ${FILE_INFO_VIEW_ID} \
+    "Drop documents into the list, pick an output format, then press Convert."
 
 # Query pandoc for supported output formats
 all_formats=$("$pandoc_bin" --list-output-formats 2>/dev/null)
@@ -82,3 +80,23 @@ options_json="${options_json}]"
 # Set the format picker options dynamically and default to Plain Text
 "$dialog_tool" "$window_uuid" ${FORMAT_PICKER_ID} omc_set_property "options" "$options_json"
 "$dialog_tool" "$window_uuid" ${FORMAT_PICKER_ID} "plain"
+
+# Seed the document list: from objects dropped on the app icon, or from the
+# Open... panel selection handed off via the private pasteboard
+seed_paths="$OMC_OBJ_PATH"
+if [ -z "$seed_paths" ]; then
+    seed_paths="$("$pasteboard_tool" "$OPEN_PATHS_PB_KEY" get)"
+    if [ -n "$seed_paths" ]; then
+        "$pasteboard_tool" "$OPEN_PATHS_PB_KEY" set ""
+    fi
+fi
+
+if [ -n "$seed_paths" ]; then
+    add_files_to_table "$seed_paths"
+    if [ -n "$_first_row_path" ]; then
+        # Visual selection only (fires no actionID); update the info pane
+        # directly from the known path to avoid the selection-vs-handler race.
+        "$dialog_tool" "$window_uuid" ${TABLE_ID} omc_select_row 0
+        apply_file_selection "$_first_row_path"
+    fi
+fi

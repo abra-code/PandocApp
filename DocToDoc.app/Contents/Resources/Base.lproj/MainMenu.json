@@ -1,0 +1,13 @@
+[
+  {
+    "type": "CommandGroup",
+    "properties": { "placement": "replacing", "placementTarget": "open" },
+    "children": [
+      { "type": "Button", "properties": {
+          "title": "Open...",
+          "actionID": "doctodoc.open",
+          "keyboardShortcut": { "key": "o" }
+      } }
+    ]
+  }
+]

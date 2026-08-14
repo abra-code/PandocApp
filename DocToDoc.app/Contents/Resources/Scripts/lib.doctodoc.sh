@@ -14,7 +14,13 @@ FLAVOR_PICKER_ID=17
 
 # Get dialog tool path
 dialog_tool="$OMC_OMC_SUPPORT_PATH/omc_dialog_control"
+next_cmd="$OMC_OMC_SUPPORT_PATH/omc_next_command"
+pasteboard_tool="$OMC_OMC_SUPPORT_PATH/pasteboard"
 window_uuid="$OMC_ACTIONUI_WINDOW_UUID"
+
+# Private pasteboard key: hand a selection from the Open... panel to a window
+# that does not exist yet, so its init script can pick it up.
+OPEN_PATHS_PB_KEY="DOCTODOC_OPEN_PATHS"
 
 DEBUG=false
 
@@ -427,9 +433,17 @@ $filename"
 
     _lib_log "buffer='${buffer}'"
 
-    # Sort, deduplicate, and push to the table
+    # Sort, deduplicate, and push to the table.
+    # The sorted rows go through a temp file so the path that ends up in row 0
+    # can be read back - callers use it to select and describe the first document
+    # without waiting for a selection event that may not have landed yet.
+    _first_row_path=""
     if [ -n "$buffer" ]; then
-        printf "%s" "$buffer" | /usr/bin/sort -u | "$dialog_tool" "$window_uuid" ${TABLE_ID} omc_table_set_rows_from_stdin
+        local tmp_rows="$(/usr/bin/mktemp "${TMPDIR:-/tmp}/doctodoc.XXXXXX")"
+        printf "%s" "$buffer" | /usr/bin/sort -u > "$tmp_rows"
+        _first_row_path="$(/usr/bin/head -1 "$tmp_rows" | /usr/bin/cut -f2)"
+        "$dialog_tool" "$window_uuid" ${TABLE_ID} omc_table_set_rows_from_stdin < "$tmp_rows"
+        /bin/rm -f "$tmp_rows"
     else
         "$dialog_tool" "$window_uuid" ${TABLE_ID} omc_table_remove_all_rows
     fi
@@ -440,4 +454,59 @@ $filename"
     fi
 
     _lib_log "--- add_files_to_table done ---"
+}
+
+# Bring the selection-dependent controls in line with a file path, or with
+# nothing selected when the path is empty.
+# Arguments: file_path (may be empty)
+apply_file_selection() {
+    local selected_path="$1"
+    local file_size="" size_display="" file_type="" created="" modified=""
+
+    if [ -z "$selected_path" ]; then
+        "$dialog_tool" "$window_uuid" ${REMOVE_BUTTON_ID} omc_disable
+        "$dialog_tool" "$window_uuid" ${REVEAL_BUTTON_ID} omc_disable
+        "$dialog_tool" "$window_uuid" ${QUICKLOOK_BUTTON_ID} omc_disable
+        "$dialog_tool" "$window_uuid" ${FILE_INFO_VIEW_ID} ""
+        return
+    fi
+
+    "$dialog_tool" "$window_uuid" ${REMOVE_BUTTON_ID} omc_enable
+    "$dialog_tool" "$window_uuid" ${REVEAL_BUTTON_ID} omc_enable
+    "$dialog_tool" "$window_uuid" ${QUICKLOOK_BUTTON_ID} omc_enable
+
+    local file_info="File: $selected_path"
+
+    if [ -e "$selected_path" ]; then
+        file_size="$(/usr/bin/stat -f "%z" "$selected_path" 2>/dev/null)"
+        if [ -n "$file_size" ]; then
+            if [ "$file_size" -gt 1048576 ]; then
+                size_display="$((file_size / 1048576)) MB"
+            elif [ "$file_size" -gt 1024 ]; then
+                size_display="$((file_size / 1024)) KB"
+            else
+                size_display="${file_size} bytes"
+            fi
+            file_info="${file_info}
+  Size: ${size_display}"
+        fi
+
+        file_type="$(/usr/bin/file -b "$selected_path" 2>/dev/null)"
+        if [ -n "$file_type" ]; then
+            file_info="${file_info}
+  Type: ${file_type}"
+        fi
+
+        created="$(/usr/bin/stat -f "%SB" "$selected_path" 2>/dev/null)"
+        modified="$(/usr/bin/stat -f "%Sm" "$selected_path" 2>/dev/null)"
+
+        if [ -n "$created" ] || [ -n "$modified" ]; then
+            file_info="${file_info}
+
+  Created: ${created}
+  Modified: ${modified}"
+        fi
+    fi
+
+    "$dialog_tool" "$window_uuid" ${FILE_INFO_VIEW_ID} "$file_info"
 }
