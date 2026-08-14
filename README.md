@@ -3,7 +3,7 @@
 ![DocToDoc Icon](Icon/DocToDoc-Default-256x256@1x.png)
 
 A native macOS applet for batch conversion of documents using [pandoc](https://pandoc.org) — a universal document converter.  
-Bundles pandoc 3.9 binary so no separate installation is required.
+Bundles pandoc 3.10 binary so no separate installation is required.
 
 Built with **OMC 5.0** engine — [github.com/abra-code/OMC](https://github.com/abra-code/OMC/)  
 UI rendered by **ActionUI** — [github.com/abra-code/ActionUI](https://github.com/abra-code/ActionUI/)
